@@ -1,0 +1,42 @@
+{
+  "name": "account-singularity-extension",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Browser extension for account-singularity: detects login/signup forms and relays fill requests to the local vault over native messaging.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "gen:icons": "node scripts/gen-icons.mjs",
+    "build": "npm run clean && npm run gen:icons && vite build && node scripts/build-content.mjs",
+    "dev": "npm run gen:icons && node scripts/dev.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
+    "package": "npm run build && node scripts/package.mjs",
+    "safari": "npm run build && xcrun safari-web-extension-converter dist --project-location safari --bundle-identifier com.account-singularity.extension --no-open --force"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/chrome": "^0.2.8",
+    "@types/node": "^26.4.1",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.12.0",
+    "jsdom": "^30.0.1",
+    "prettier": "^3.9.6",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.69.0",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
+  }
+}

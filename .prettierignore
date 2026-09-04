@@ -1,0 +1,5 @@
+dist/
+safari/
+coverage/
+src/public/icons/
+package-lock.json

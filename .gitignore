@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.zip
+
+# Generated at build time
+src/public/icons/
+coverage/
+
+# Safari / Xcode conversion output
+safari/
+*.xcodeproj/xcuserdata/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Env / local
+.env
+.env.local
+
+# Personal working notes
+notes.txt
