@@ -10,6 +10,7 @@ function formFixture(html: string): HTMLFormElement {
 
 afterEach(() => {
   document.body.innerHTML = '';
+  window.history.pushState(null, '', '/');
 });
 
 describe('classifyForm', () => {
@@ -56,6 +57,46 @@ describe('classifyForm', () => {
       </form>
     `);
     expect(classifyForm(form)).toBe('signup');
+  });
+
+  it('returns "unknown" for a lone email field on a non-auth URL', () => {
+    window.history.pushState(null, '', '/newsletter');
+    const form = formFixture('<form><input type="email" name="email"></form>');
+    expect(classifyForm(form)).toBe('unknown');
+  });
+
+  it('returns "unknown" for a lone email field with no auth-like URL even with login wording', () => {
+    // Wording alone isn't trusted without the password anchor or an auth URL —
+    // it doesn't survive localization reliably.
+    const form = formFixture(`
+      <form aria-label="Sign in"><input type="email" name="email"></form>
+    `);
+    expect(classifyForm(form)).toBe('unknown');
+  });
+
+  it('classifies a lone email field as login on an auth-flow URL', () => {
+    window.history.pushState(null, '', '/login/two-step');
+    const form = formFixture('<form><input type="email" name="email"></form>');
+    expect(classifyForm(form)).toBe('login');
+  });
+
+  it('classifies a lone email field as signup on an auth-flow URL with signup wording', () => {
+    window.history.pushState(null, '', '/account/signup');
+    const form = formFixture(`
+      <form><input type="email" name="email"><button>Create account</button></form>
+    `);
+    expect(classifyForm(form)).toBe('signup');
+  });
+
+  it('does not treat a form with an email field plus other unrelated fields as identifier-only', () => {
+    window.history.pushState(null, '', '/login');
+    const form = formFixture(`
+      <form>
+        <input type="email" name="email" />
+        <textarea name="message"></textarea>
+      </form>
+    `);
+    expect(classifyForm(form)).toBe('unknown');
   });
 });
 

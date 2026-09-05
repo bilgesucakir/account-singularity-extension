@@ -11,18 +11,24 @@ const reported = new WeakSet<HTMLFormElement>();
 
 function inspect(form: HTMLFormElement): void {
   if (reported.has(form)) return;
-  if (!form.querySelector('input[type="password"]')) return;
 
-  reported.add(form);
   const summary = summarizeForm(form);
   if (summary.kind === 'unknown') return;
 
+  reported.add(form);
   notifyBackground({ type: 'form.detected', form: summary, url: location.href });
 }
 
 function scan(root: ParentNode): void {
   if (root instanceof HTMLFormElement) inspect(root);
   for (const form of root.querySelectorAll<HTMLFormElement>('form')) inspect(form);
+
+  // A mutation may add a field into a <form> that was already present (and
+  // already scanned as password-less) rather than adding the form itself —
+  // common with components that mount fields one at a time. Re-check the
+  // enclosing form so it isn't missed.
+  const enclosingForm = root instanceof Element ? root.closest('form') : null;
+  if (enclosingForm) inspect(enclosingForm);
 }
 
 const observer = new MutationObserver((records) => {

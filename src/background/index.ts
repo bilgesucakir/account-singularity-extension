@@ -1,5 +1,5 @@
 import type { PopupStatusReply, RuntimeMessage } from '../shared/messaging';
-import { NATIVE_HOST_NAME, PROTOCOL_VERSION } from '../shared/protocol';
+import { NATIVE_HOST_NAME, PROTOCOL_VERSION, type DetectedFormSummary } from '../shared/protocol';
 
 /**
  * Background service worker. It is ephemeral — the browser can tear it down
@@ -7,6 +7,21 @@ import { NATIVE_HOST_NAME, PROTOCOL_VERSION } from '../shared/protocol';
  * port to account-singularity-core is opened lazily and allowed to close when
  * idle. Vault secrets never leave this worker for the rest of the extension.
  */
+
+function timestamp(): string {
+  const now = new Date();
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  const ms = String(now.getMilliseconds()).padStart(3, '0');
+  return `${mm}:${ss}.${ms}`;
+}
+
+// What the form actually offers to fill — this is what later decides whether
+// core needs to send back just an identifier or identifier + password.
+function credentialSummary(form: DetectedFormSummary): string {
+  if (!form.hasPasswordField) return 'identifier only (no password field yet)';
+  return form.hasNewPasswordField ? 'identifier + new password' : 'identifier + password';
+}
 
 let nativePort: chrome.runtime.Port | undefined;
 
@@ -45,13 +60,24 @@ async function readVaultStatus(): Promise<PopupStatusReply> {
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
   switch (message.type) {
-    case 'form.detected':
-      console.debug('[account-singularity] form detected:', message.form.kind, message.url);
+    case 'form.detected': {
+      const { form, url } = message;
+      console.debug(
+        `[account-singularity ${timestamp()}] form detected: ${form.kind} — ` +
+          `${credentialSummary(form)} — ${form.fieldNames.length} field(s)`,
+        {
+          url,
+          fields: form.fieldNames,
+          hasPasswordField: form.hasPasswordField,
+          hasNewPasswordField: form.hasNewPasswordField,
+        },
+      );
       // TODO: ask core whether we have (or should create) an account here.
       return false;
+    }
 
     case 'page.state':
-      console.debug('[account-singularity] page state:', message.state, message.url);
+      console.debug(`[account-singularity ${timestamp()}] page state:`, message.state, message.url);
       // TODO: on 'login-success', confirm and persist the pending account.
       return false;
 
